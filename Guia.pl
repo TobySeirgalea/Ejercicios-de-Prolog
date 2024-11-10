@@ -409,3 +409,23 @@ arbolesDeNNodos(0, nil).
 arbolesDeNNodos(1, bin(nil, _, nil)).
 arbolesDeNNodos(N, bin(I,_,nil)) :- N > 1, N2 is N - 1, arbolesDeNNodos(N2, I). 
 arbolesDeNNodos(N, bin(nil,_,D)) :- N > 1, N2 is N - 1, arbolesDeNNodos(N2, D).
+
+% nodosEn(?A, +L)
+nodosEn(nil, L).
+nodosEn(bin(I, V, D), L) :- member(V, L), nodosEn(I, L), nodosEn(D, L).
+
+%sinRepEn(-A, +L)
+sinRepEn(A, L) :- length(L, N), todosLosArbolesDeNnodos(A, N), nodosEn(A, L), sinElementosRepetidos(A).
+
+%sinElementosRepetidos(+A)
+sinElementosRepetidos(nil).
+sinElementosRepetidos(bin(I, R, D)) :- noPerteneceAlArbol(R, I), noPerteneceAlArbol(R, D), sinElementosRepetidos(I), sinElementosRepetidos(D).
+
+%noPerteneceAlArbol(+Elemento, +A)
+noPerteneceAlArbol(Elemento, nil).
+noPerteneceAlArbol(Elemento, bin(I, R, D)) :- Elemento \= R, noPerteneceAlArbol(Elemento, I), noPerteneceAlArbol(Elemento, D).
+
+%todosLosArbolesDeNnodos(-A, +N) notar que debo restarle uno a N porque por el constructor bin(I, _, D) ya estoy agregando uno entonces solo necesito los de los subárboles
+todosLosArbolesDeNnodos(nil, 0).
+todosLosArbolesDeNnodos(bin(I , _, D), N) :- N > 0, NodosSubarboles is N - 1, between(0, NodosSubarboles, CantidadI), CantidadD is NodosSubarboles - CantidadI, arbolesDeNNodos(CantidadI, I), arbolesDeNNodos(CantidadD, D).
+
