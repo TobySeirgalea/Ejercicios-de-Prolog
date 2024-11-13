@@ -43,10 +43,14 @@ intercalar([X|XS], [Y|YS], [Y|ZS]) :- intercalar([X|XS], YS, ZS).
 %% Ejercicio 4
 %% serializar(+P,?XS)
 serializar(P, [P]) :- P \= secuencia(_,_), P\= paralelo(_,_).
-serializar(secuencia(P, Q), L) :- serializar(P, L1), serializar(Q, L2), append(L1, L2, L). %, preservaOrden(L1, L2, L).
-serializar(paralelo(P, Q), L) :- serializar(P, L1), serializar(Q, L2), append(L1, L2, L), intercalar(L1, L2, L).
+serializar(secuencia(P, Q), L) :- serializar(P, L1), serializar(Q, L2), append(L1, L2, L).
+serializar(paralelo(P, Q), L) :- serializar(P, L1), serializar(Q, L2), intercalar(L1, L2, L).
 
 
+preservaOrden(_, []).
+preservaOrden(secuencia(P,Q), [P,Q|L]).
+preservaOrden(secuencia(P, Q), L). 
+preservaOrden()
 
 procesosAtomicos(escribir).
 procesosAtomicos(computar).
