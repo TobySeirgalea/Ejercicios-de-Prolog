@@ -4,13 +4,27 @@
 
 %% Ejercicio 1
 %% proceso(+P)
-proceso(_).
+proceso(computar).
+proceso(escribir(_,_)).
+proceso(leer(_)).
+proceso(secuencia(_,_)).
+proceso(paralelo(_,_)).
 
 %% Ejercicio 2
 %% buffersUsados(+P,-BS)
-buffersUsados(_,_).
+buffersUsados(escribir(Buffer, _), [Buffer]).
+buffersUsados(leer(Buffer), [Buffer]).
+buffersUsados(secuencia(Proceso1, Proceso2), L) :- buffersUsados(Proceso1, BuffersProceso1), buffersUsados(Proceso2, BuffersProceso2), append(BuffersProceso1, BuffersProceso2, L), sinRepetidos(L), ordenCreciente(L).
+buffersUsados(paralelo(Proceso1, Proceso2), L)  :- buffersUsados(Proceso1, BuffersProceso1), buffersUsados(Proceso2, BuffersProceso2), append(BuffersProceso1, BuffersProceso2, L), sinRepetidos(L), ordenCreciente(L).
 
+%%sinRepetidos(+Lista)
+sinRepetidos([]).
+sinRepetidos([X|XS]) :- not(member(X, XS)), sinRepetidos(XS).
 
+%%ordenCreciente(+Lista)
+ordenCreciente([]).
+ordenCreciente([_]).
+ordenCreciente([X, Y|YS]) :- X =< Y, ordenCreciente([Y|YS]). 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Organización de procesos %%
