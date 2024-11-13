@@ -32,12 +32,45 @@ ordenCreciente([X, Y|YS]) :- X =< Y, ordenCreciente([Y|YS]).
 
 %% Ejercicio 3
 %% intercalar(+XS,+YS,?ZS)
-intercalar(_,_,_).
+intercalar([], [], []).
+intercalar(XS, [], XS) :- XS \= [].
+intercalar([],YS, YS) :- YS \= [].
+intercalar([X|XS], [Y|YS], [X|ZS]) :- intercalar(XS, [Y|YS], ZS).
+intercalar([X|XS], [Y|YS], [Y|ZS]) :- intercalar([X|XS], YS, ZS).
+
+
 
 %% Ejercicio 4
 %% serializar(+P,?XS)
-serializar(_,_).
+serializar(P, [P]) :- P \= secuencia(_,_), P\= paralelo(_,_).
+serializar(secuencia(P, Q), L) :- serializar(P, L1), serializar(Q, L2), append(L1, L2, L). %, preservaOrden(L1, L2, L).
+serializar(paralelo(P, Q), L) :- serializar(P, L1), serializar(Q, L2), append(L1, L2, L), intercalar(L1, L2, L).
 
+
+
+procesosAtomicos(escribir).
+procesosAtomicos(computar).
+procesosAtomicos(leer(_)).
+procesosAtomicos(escribir(_,_)).
+%si es atomico lo quiero meter directo sin intercalar, i.e. hacer append como con secuencia
+%
+
+%Si es secuencia las debo meter a ambos en misma lista L1 para llamar a intercalar(L1, _, L)
+%Si es paralelo también
+
+
+
+
+
+
+Si son secuencias las apendeo
+si son paralelos los intercalo
+si son secuencia y paralelo intercalo solo los de paralelo 
+
+21 ?- serializar(paralelo(paralelo(leer(1),leer(2)),secuencia(leer(3),leer(4))),XS).
+      serializar((paralelo(leer(1),leer(2))), L1)    serializar((secuencia(leer(3),leer(4))), L2), append(L1, L2, L)
+      serializar(leer(1), L11), serializar(leer(2), L12)
+                [leer(1)] [leer(2)]
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Contenido de los buffers %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
