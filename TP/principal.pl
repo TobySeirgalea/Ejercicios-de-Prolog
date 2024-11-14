@@ -62,34 +62,48 @@ serializar(paralelo(P, Q), L)  :- serializar(P, L1),
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Ejercicio 5
-%% contenidoBuffer(+B,+ProcesoOLista,?Contenidos)
-contenidoBuffer(B, [], []).
-contenidoBuffer(B, Serializacion, Contenidos) :- Serializacion = [_|_], %Se podría utilizar is_list también
-                                                 realizarLecturas(Serializacion, Contenidos),
-                                                 noLeoNadaNoEscritoPreviamente(Contenidos).
-contenidoBuffer(B, Proceso, Contenidos)       :- serializar(Proceso, Serializacion), 
-                                                 realizarLecturas(Serializacion, Contenidos), 
-                                                 noLeoNadaNoEscritoPreviamente(Contenidos).
+%% contenidoBuffer(+Buffer,+ProcesoOLista,?Contenidos)
+contenidoBuffer(_, [], []).
+contenidoBuffer(Buffer, Serializacion, ContenidosBuffer) :- Serializacion = [_|_], %Se podría utilizar is_list también
+                                                      realizarLecturas(Buffer, Serializacion, Contenidos),
+                                                      noLeoNadaNoEscritoPreviamente(Contenidos),
+                                                      soloContenidoDel(Buffer, Contenidos, ContenidosBuffer).
+contenidoBuffer(Buffer, Proceso, ContenidosBuffer)       :- serializar(Proceso, Serializacion), 
+                                                      realizarLecturas(Buffer, Serializacion, Contenidos), 
+                                                      noLeoNadaNoEscritoPreviamente(Contenidos),
+                                                      soloContenidoDel(Buffer, Contenidos, ContenidosBuffer).
 
 %%noLeoNadaNoEscritoPreviamente(+Serialización)
 noLeoNadaNoEscritoPreviamente([]).
 noLeoNadaNoEscritoPreviamente(Serializacion) :- reverse(Serializacion, SerializacionEnOrdenLectura),
                                                 lecturasLuegoDeEscrituras(SerializacionEnOrdenLectura).
 
+esContenidoBuffer(Buffer, leer(Buffer)).
+esContenidoBuffer(Buffer, escribir(Buffer, _)).
+
+
+soloContenidoDel(Buffer, [], []).
+soloContenidoDel(Buffer, [X|XS], [X|L]) :- esContenidoBuffer(Buffer, X), soloContenidoDel(Buffer, XS, L). 
+soloContenidoDel(Buffer, [X|XS], L) :- not(esContenidoBuffer(Buffer, X)), soloContenidoDel(Buffer, XS, L).
 
 %%lecturasLuegoDeEscrituras(+Serialización)
-lecturasLuegoDeEscrituras([Proceso|Serializacion])      :- Proceso \= leer(Buffer),
+lecturasLuegoDeEscrituras([]).
+lecturasLuegoDeEscrituras([Proceso|Serializacion])      :- Proceso \= leer(_),
                                                            lecturasLuegoDeEscrituras(Serializacion).
 lecturasLuegoDeEscrituras([leer(Buffer)|Serializacion]) :- member(escribir(Buffer, _), Serializacion).
 
-%%realizarLecturas(+Lista, -ListaConLecturasRealizadas)
-realizarLecturas([], []).
-realizarLecturas([escribir(Buffer, Contenido)|Serializacion], ListaConLecturasRealizadas) :- siPerteneceLoSaco(leer(Buffer), Serializacion, YaLeiBuffer),
-                                                                                             realizarLecturas(YaLeiBuffer, ListaConLecturasRealizadas).
-realizarLecturas([Proceso|Serializacion], [Proceso|ListaConLecturasRealizadas])           :- Proceso \= escribir(Buffer, Contenido),
-                                                                                             realizarLecturas(Serializacion, ListaConLecturasRealizadas).
+%%realizarLecturas(+Buffer, +Lista, -ListaConLecturasRealizadas) : Realiza las lecturas del buffer, instancia en ListaConLecturasRealizadas el buffer resultante serializado
+realizarLecturas(Buffer, [], []).
+realizarLecturas(Buffer, [escribir(Buffer, Contenido)|XS], L) :- memberchk(leer(Buffer), XS), siPerteneceLoSaco(leer(Buffer), XS, R), realizarLecturas(Buffer, R, L).
+realizarLecturas(Buffer, [escribir(Buffer, Contenido)|XS], [escribir(Buffer, Contenido)|XS]) :- not(memberchk(leer(Buffer), XS)).
+realizarLecturas(Buffer, [Proceso|XS], [Proceso|L]) :- Proceso \= escribir(Buffer,_), realizarLecturas(Buffer, XS, L).
+ 
 
-%%siPerteneceLoSaco(+P, +Lista, ?XS) : Si P pertenece a Lista instancia en XS la Lista-{P} sino falla.
+
+
+
+%%siPerteneceLoSaco(+P, +Lista, ?XS) : Si P pertenece a Lista instancia en XS la Lista-{primera aparición de P} sino falla.
+siPerteneceLoSaco(Proceso, [], []).
 siPerteneceLoSaco(Proceso, [Proceso|ListaProcesos], ListaProcesos).
 siPerteneceLoSaco(Proceso, [Proceso1|ListaProcesos], [Proceso1|ListaProcesosFinal]) :- Proceso1 \= Proceso, 
                                                                                        siPerteneceLoSaco(Proceso, ListaProcesos, ListaProcesosFinal).
