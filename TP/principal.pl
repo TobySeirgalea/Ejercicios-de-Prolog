@@ -14,8 +14,16 @@ proceso(paralelo(_,_)).
 %% buffersUsados(+P,-BS)
 buffersUsados(escribir(Buffer, _), [Buffer]).
 buffersUsados(leer(Buffer), [Buffer]).
-buffersUsados(secuencia(Proceso1, Proceso2), L) :- buffersUsados(Proceso1, BuffersProceso1), buffersUsados(Proceso2, BuffersProceso2), append(BuffersProceso1, BuffersProceso2, L), sinRepetidos(L), ordenCreciente(L).
-buffersUsados(paralelo(Proceso1, Proceso2), L)  :- buffersUsados(Proceso1, BuffersProceso1), buffersUsados(Proceso2, BuffersProceso2), append(BuffersProceso1, BuffersProceso2, L), sinRepetidos(L), ordenCreciente(L).
+buffersUsados(secuencia(Proceso1, Proceso2), L) :- buffersUsados(Proceso1, BuffersProceso1),
+                                                   buffersUsados(Proceso2, BuffersProceso2), 
+                                                   append(BuffersProceso1, BuffersProceso2, L), 
+                                                   sinRepetidos(L),
+                                                   ordenCreciente(L).
+buffersUsados(paralelo(Proceso1, Proceso2), L)  :- buffersUsados(Proceso1, BuffersProceso1),
+                                                   buffersUsados(Proceso2, BuffersProceso2),
+                                                   append(BuffersProceso1, BuffersProceso2, L),
+                                                   sinRepetidos(L),
+                                                   ordenCreciente(L).
 
 %%sinRepetidos(+Lista)
 sinRepetidos([]).
@@ -33,55 +41,58 @@ ordenCreciente([X, Y|YS]) :- X =< Y, ordenCreciente([Y|YS]).
 %% Ejercicio 3
 %% intercalar(+XS,+YS,?ZS)
 intercalar([], [], []).
-intercalar(XS, [], XS) :- XS \= [].
-intercalar([],YS, YS) :- YS \= [].
+intercalar(XS, [], XS)             :- XS \= [].
+intercalar([],YS, YS)              :- YS \= [].
 intercalar([X|XS], [Y|YS], [X|ZS]) :- intercalar(XS, [Y|YS], ZS).
 intercalar([X|XS], [Y|YS], [Y|ZS]) :- intercalar([X|XS], YS, ZS).
 
-
-
 %% Ejercicio 4
 %% serializar(+P,?XS)
-serializar(P, [P]) :- P \= secuencia(_,_), P\= paralelo(_,_).
-serializar(secuencia(P, Q), L) :- serializar(P, L1), serializar(Q, L2), append(L1, L2, L).
-serializar(paralelo(P, Q), L) :- serializar(P, L1), serializar(Q, L2), intercalar(L1, L2, L).
-
-
-preservaOrden(_, []).
-preservaOrden(secuencia(P,Q), [P,Q|L]).
-preservaOrden(secuencia(P, Q), L). 
-preservaOrden()
-
-procesosAtomicos(escribir).
-procesosAtomicos(computar).
-procesosAtomicos(leer(_)).
-procesosAtomicos(escribir(_,_)).
-%si es atomico lo quiero meter directo sin intercalar, i.e. hacer append como con secuencia
-%
-
-%Si es secuencia las debo meter a ambos en misma lista L1 para llamar a intercalar(L1, _, L)
-%Si es paralelo también
-
-
-
-
-
-
-Si son secuencias las apendeo
-si son paralelos los intercalo
-si son secuencia y paralelo intercalo solo los de paralelo 
-
-21 ?- serializar(paralelo(paralelo(leer(1),leer(2)),secuencia(leer(3),leer(4))),XS).
-      serializar((paralelo(leer(1),leer(2))), L1)    serializar((secuencia(leer(3),leer(4))), L2), append(L1, L2, L)
-      serializar(leer(1), L11), serializar(leer(2), L12)
-                [leer(1)] [leer(2)]
+serializar(computar, [computar]).
+serializar(leer(B), [leer(B)]).
+serializar(escribir(B, S), [escribir(B, S)]).
+serializar(secuencia(P, Q), L) :- serializar(P, L1),
+                                  serializar(Q, L2), 
+                                  append(L1, L2, L).
+serializar(paralelo(P, Q), L)  :- serializar(P, L1),
+                                  serializar(Q, L2),
+                                  intercalar(L1, L2, L).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Contenido de los buffers %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Ejercicio 5
 %% contenidoBuffer(+B,+ProcesoOLista,?Contenidos)
-contenidoBuffer(_,_,_).
+contenidoBuffer(B, [], []).
+contenidoBuffer(B, Serializacion, Contenidos) :- Serializacion = [_|_], %Se podría utilizar is_list también
+                                                 realizarLecturas(Serializacion, Contenidos),
+                                                 noLeoNadaNoEscritoPreviamente(Contenidos).
+contenidoBuffer(B, Proceso, Contenidos)       :- serializar(Proceso, Serializacion), 
+                                                 realizarLecturas(Serializacion, Contenidos), 
+                                                 noLeoNadaNoEscritoPreviamente(Contenidos).
+
+%%noLeoNadaNoEscritoPreviamente(+Serialización)
+noLeoNadaNoEscritoPreviamente([]).
+noLeoNadaNoEscritoPreviamente(Serializacion) :- reverse(Serializacion, SerializacionEnOrdenLectura),
+                                                lecturasLuegoDeEscrituras(SerializacionEnOrdenLectura).
+
+
+%%lecturasLuegoDeEscrituras(+Serialización)
+lecturasLuegoDeEscrituras([Proceso|Serializacion])      :- Proceso \= leer(Buffer),
+                                                           lecturasLuegoDeEscrituras(Serializacion).
+lecturasLuegoDeEscrituras([leer(Buffer)|Serializacion]) :- member(escribir(Buffer, _), Serializacion).
+
+%%realizarLecturas(+Lista, -ListaConLecturasRealizadas)
+realizarLecturas([], []).
+realizarLecturas([escribir(Buffer, Contenido)|Serializacion], ListaConLecturasRealizadas) :- siPerteneceLoSaco(leer(Buffer), Serializacion, YaLeiBuffer),
+                                                                                             realizarLecturas(YaLeiBuffer, ListaConLecturasRealizadas).
+realizarLecturas([Proceso|Serializacion], [Proceso|ListaConLecturasRealizadas])           :- Proceso \= escribir(Buffer, Contenido),
+                                                                                             realizarLecturas(Serializacion, ListaConLecturasRealizadas).
+
+%%siPerteneceLoSaco(+P, +Lista, ?XS) : Si P pertenece a Lista instancia en XS la Lista-{P} sino falla.
+siPerteneceLoSaco(Proceso, [Proceso|ListaProcesos], ListaProcesos).
+siPerteneceLoSaco(Proceso, [Proceso1|ListaProcesos], [Proceso1|ListaProcesosFinal]) :- Proceso1 \= Proceso, 
+                                                                                       siPerteneceLoSaco(Proceso, ListaProcesos, ListaProcesosFinal).
 
 
 %% Ejercicio 6
