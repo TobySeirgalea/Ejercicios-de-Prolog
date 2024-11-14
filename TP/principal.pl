@@ -137,6 +137,7 @@ realizarLecturas([Proceso|XS], L)                       :- Proceso \= escribir(_
 
 %% Ejercicio 7
 %% esSeguro(+P)
+esSeguro([]).
 esSeguro(Serializacion) :- Serializacion = [_|_],
                            noLeoNadaNoEscritoPreviamente(Serializacion).
 esSeguro(Procesos) :-     procesosParalelosNoCompartenBuffer(Procesos), 
@@ -155,7 +156,33 @@ noCompartenBuffers([leer(Buffer)|PS], L2) :- not(memberchk(leer(Buffer))), noCom
 
 %% Ejercicio 8
 %% ejecucionSegura( XS,+BS,+CS) - COMPLETAR LA INSTANCIACIÓN DE XS
-ejecucionSegura(_,_,_).
+ejecucionSegura(XS, ListaBuffers, Contenidos) :-  desde(0, N), between(0, N, N2), generarTodasLasEjecucionesDe(ListaBuffers, Contenidos, XS, N), length(XS, N2), esSeguro(XS).
+
+%generar unidireccional y llamar con permutaciones de bs y cs
+
+generarTodasLasEjecucionesDe(_,_,[],0).
+generarTodasLasEjecucionesDe(BS, CS, [computar|XS] , N) :- N > 0, N2 is N - 1, generarTodasLasEjecucionesDe([B1|BS], [C1|CS], XS, N2).
+generarTodasLasEjecucionesDe(BS, CS, [escribir(B, C)|XS] , N) :- N > 0, N2 is N - 1, member(BS, B), member(CS, C),generarTodasLasEjecucionesDe(BS, CS, XS, N2).
+generarTodasLasEjecucionesDe(BS, CS, [leer(B)|XS] , N) :- N > 0, N2 is N - 1, member(BS, B),generarTodasLasEjecucionesDe(BS, CS, XS, N2).
+
+permutaciones([], []).
+permutaciones([X|XS], L) :- var(L), permutaciones(XS, L1), agregarEnTodasPartes(X, L1, L).
+%permutacion(+L1, +L2) sería más eficiente si implementamos una función 'mismosElementos' / que si L1 y L2 tienen los mismos elementos y longitud, entonces una es permutación de la otra
+permutaciones([X|XS], L) :- nonvar(L), length([X|XS], L1), length(L, L1), mismosElementos([X|XS], L).
+
+desde(X,X).
+desde(X, Y) :- X1 is X+1, desde(X1, Y).
+
+%mismosElementos(+L1, +L2)
+mismosElementos([], []).
+mismosElementos(L1, L2) :- pertenece(X, L1), pertenece(X, L2). 
+
+%agregarEnTodasPartes(+E, +L, -LS)
+agregarEnTodasPartes(E, [], [E]).
+agregarEnTodasPartes(E, [X|XS], [E,X|XS]).
+agregarEnTodasPartes(E, [X|XS], [X|L]) :- agregarEnTodasPartes(E, XS, L).
+
+
 
   %% 8.1. Analizar la reversibilidad de XS, justificando adecuadamente por qué el predicado se comporta como
   %% lo hace.
