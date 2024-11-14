@@ -65,38 +65,39 @@ serializar(paralelo(P, Q), L)  :- serializar(P, L1),
 %% contenidoBuffer(+Buffer,+ProcesoOLista,?Contenidos)
 contenidoBuffer(_, [], []).
 contenidoBuffer(Buffer, Serializacion, ContenidosBuffer) :- Serializacion = [_|_], %Se podría utilizar is_list también
-                                                      realizarLecturas(Buffer, Serializacion, Contenidos),
-                                                      noLeoNadaNoEscritoPreviamente(Contenidos),
-                                                      soloContenidoDel(Buffer, Contenidos, ContenidosBuffer).
+                                                            realizarLecturas(Buffer, Serializacion, Contenidos),
+                                                            noLeoNadaNoEscritoPreviamente(Contenidos),
+                                                            soloContenidoDel(Buffer, Contenidos, ContenidosBuffer).
 contenidoBuffer(Buffer, Proceso, ContenidosBuffer)       :- serializar(Proceso, Serializacion), 
-                                                      realizarLecturas(Buffer, Serializacion, Contenidos), 
-                                                      noLeoNadaNoEscritoPreviamente(Contenidos),
-                                                      soloContenidoDel(Buffer, Contenidos, ContenidosBuffer).
+                                                            realizarLecturas(Buffer, Serializacion, Contenidos), 
+                                                            noLeoNadaNoEscritoPreviamente(Contenidos),
+                                                            soloContenidoDel(Buffer, Contenidos, ContenidosBuffer).
 
 %%noLeoNadaNoEscritoPreviamente(+Serialización)
-noLeoNadaNoEscritoPreviamente([]).
 noLeoNadaNoEscritoPreviamente(Serializacion) :- reverse(Serializacion, SerializacionEnOrdenLectura),
                                                 lecturasLuegoDeEscrituras(SerializacionEnOrdenLectura).
 
-esContenidoBuffer(Buffer, leer(Buffer)).
-esContenidoBuffer(Buffer, escribir(Buffer, _)).
 
 
 soloContenidoDel(Buffer, [], []).
-soloContenidoDel(Buffer, [X|XS], [X|L]) :- esContenidoBuffer(Buffer, X), soloContenidoDel(Buffer, XS, L). 
-soloContenidoDel(Buffer, [X|XS], L) :- not(esContenidoBuffer(Buffer, X)), soloContenidoDel(Buffer, XS, L).
+soloContenidoDel(Buffer, [escribir(Buffer, Contenido)|XS], [Contenido|L]) :- soloContenidoDel(Buffer, XS, L). 
+soloContenidoDel(Buffer, [X|XS], L)                                       :- X \= escribir(Buffer, _), 
+                                                                             soloContenidoDel(Buffer, XS, L).
 
 %%lecturasLuegoDeEscrituras(+Serialización)
 lecturasLuegoDeEscrituras([]).
 lecturasLuegoDeEscrituras([Proceso|Serializacion])      :- Proceso \= leer(_),
                                                            lecturasLuegoDeEscrituras(Serializacion).
-lecturasLuegoDeEscrituras([leer(Buffer)|Serializacion]) :- member(escribir(Buffer, _), Serializacion).
+lecturasLuegoDeEscrituras([leer(Buffer)|Serializacion]) :- memberchk(escribir(Buffer, _), Serializacion), lecturasLuegoDeEscrituras(Serializacion).
 
 %%realizarLecturas(+Buffer, +Lista, -ListaConLecturasRealizadas) : Realiza las lecturas del buffer, instancia en ListaConLecturasRealizadas el buffer resultante serializado
 realizarLecturas(Buffer, [], []).
-realizarLecturas(Buffer, [escribir(Buffer, Contenido)|XS], L) :- memberchk(leer(Buffer), XS), siPerteneceLoSaco(leer(Buffer), XS, R), realizarLecturas(Buffer, R, L).
+realizarLecturas(Buffer, [escribir(Buffer, Contenido)|XS], L)                                :- memberchk(leer(Buffer), XS), 
+                                                                                                siPerteneceLoSaco(leer(Buffer), XS, R),
+                                                                                                realizarLecturas(Buffer, R, L).
 realizarLecturas(Buffer, [escribir(Buffer, Contenido)|XS], [escribir(Buffer, Contenido)|XS]) :- not(memberchk(leer(Buffer), XS)).
-realizarLecturas(Buffer, [Proceso|XS], [Proceso|L]) :- Proceso \= escribir(Buffer,_), realizarLecturas(Buffer, XS, L).
+realizarLecturas(Buffer, [Proceso|XS], [Proceso|L])                                          :- Proceso \= escribir(Buffer,_),
+                                                                                                realizarLecturas(Buffer, XS, L).
  
 
 
@@ -112,6 +113,9 @@ siPerteneceLoSaco(Proceso, [Proceso1|ListaProcesos], [Proceso1|ListaProcesosFina
 %% Ejercicio 6
 %% contenidoLeido(+ProcesoOLista,?Contenidos)
 contenidoLeido(_,_).
+
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -133,6 +137,13 @@ ejecucionSegura(_,_,_).
 %%%%%%%%%%%
 %% TESTS %%
 %%%%%%%%%%%
+
+
+% debería retornar false porque hay una lectura antes que una escritura
+% contenidoBuffer(2,paralelo(secuencia(leer(2),escribir(2,sol)),secuencia(escribir(1,agua),leer(1))),XS).
+
+
+
 
 % Se espera que completen con las subsecciones de tests que crean necesarias, más allá de las puestas en estos ejemplos
 
