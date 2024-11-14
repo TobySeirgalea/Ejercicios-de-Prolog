@@ -137,6 +137,21 @@ realizarLecturas([Proceso|XS], L)                       :- Proceso \= escribir(_
 
 %% Ejercicio 7
 %% esSeguro(+P)
+esSeguro(Serializacion) :- Serializacion = [_|_],
+                           noLeoNadaNoEscritoPreviamente(Serializacion).
+esSeguro(Procesos) :-     procesosParalelosNoCompartenBuffer(Procesos), 
+                          not((serializar(Procesos, Serializacion),
+                          not(esSeguro(Serializacion)))).
+
+procesosParalelosNoCompartenBuffer(escribir(_,_)).
+procesosParalelosNoCompartenBuffer(computar).
+procesosParalelosNoCompartenBuffer(leer(_)).
+procesosParalelosNoCompartenBuffer(secuencia(P, Q)) :- procesosParalelosNoCompartenBuffer(P), procesosParalelosNoCompartenBuffer(Q). 
+procesosParalelosNoCompartenBuffer(paralelo(P,Q)) :- serializar(P, L1), serializar(Q, L2), noCompartenBuffers(L1, L2).
+
+noCompartenBuffers([], L).
+noCompartenBuffers([escribir(Buffer, _)|PS], L2) :- not(memberchk(escribir(Buffer, _), L2)), noCompartenBuffers(PS, L2). 
+noCompartenBuffers([leer(Buffer)|PS], L2) :- not(memberchk(leer(Buffer))), noCompartenBuffers(PS, L2). 
 
 %% Ejercicio 8
 %% ejecucionSegura( XS,+BS,+CS) - COMPLETAR LA INSTANCIACIÓN DE XS
