@@ -91,14 +91,6 @@ lecturasLuegoDeEscrituras([leer(Buffer)|Serializacion]) :- memberchk(escribir(Bu
                                                            siPerteneceLoSaco(escribir(Buffer, _), Serializacion, L), 
                                                            lecturasLuegoDeEscrituras(L).
 
-%% realizarLecturas(+Buffer, +Lista, -ListaConLecturasRealizadas) : Realiza las lecturas del buffer, instancia en ListaConLecturasRealizadas el buffer resultante serializado
-% realizarLecturas(Buffer, [], [], []).
-% realizarLecturas(Buffer, [escribir(Buffer, Contenido)|ListaProcesos], ListaConLecturasRealizadas)                  :- memberchk(leer(Buffer), ListaProcesos), 
-%                                                                                                                       siPerteneceLoSaco(leer(Buffer), ListaProcesos, LecturaRealizada),
-%                                                                                                                       realizarLecturas(Buffer, LecturaRealizada, ListaConLecturasRealizadas).
-% realizarLecturas(Buffer, [escribir(Buffer, Contenido)|ListaProcesos], [escribir(Buffer, Contenido)|ListaProcesos]) :- not(memberchk(leer(Buffer), ListaProcesos)).
-% realizarLecturas(Buffer, [Proceso|ListaProcesos], [Proceso|ListaConLecturasRealizadas])                            :- Proceso \= escribir(Buffer,_),
-%                                                                                                                       realizarLecturas(Buffer, ListaProcesos, ListaConLecturasRealizadas).
  
 %% siPerteneceLoSaco(+P, +Lista, ?XS) : Si P pertenece a Lista instancia en XS la Lista-{primera aparición de P} sino falla.
 siPerteneceLoSaco(Proceso, [], []).
