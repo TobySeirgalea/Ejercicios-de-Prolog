@@ -65,11 +65,11 @@ serializar(paralelo(P, Q), L)  :- serializar(P, L1),
 %% contenidoBuffer(+Buffer,+ProcesoOLista,?Contenidos)
 contenidoBuffer(_, [], []).
 contenidoBuffer(Buffer, Serializacion, ContenidosBuffer) :- Serializacion = [_|_], %Se podría utilizar is_list también
-                                                            realizarLecturas(Buffer, Serializacion, BufferConLecturasRealizadas),
+                                                            realizarLecturas(Serializacion, _,BufferConLecturasRealizadas),
                                                             noLeoNadaNoEscritoPreviamente(BufferConLecturasRealizadas),
                                                             soloContenidoDel(Buffer, BufferConLecturasRealizadas, ContenidosBuffer).
 contenidoBuffer(Buffer, Proceso, ContenidosBuffer)       :- serializar(Proceso, Serializacion), 
-                                                            realizarLecturas(Buffer, Serializacion, BufferConLecturasRealizadas), 
+                                                            realizarLecturas(Serializacion, _, BufferConLecturasRealizadas), 
                                                             noLeoNadaNoEscritoPreviamente(BufferConLecturasRealizadas),
                                                             soloContenidoDel(Buffer, BufferConLecturasRealizadas, ContenidosBuffer).
 
@@ -102,10 +102,10 @@ siPerteneceLoSaco(Proceso, [Proceso1|ListaProcesos], [Proceso1|ListaProcesosFina
 %% contenidoLeido(+ProcesoOLista,?Contenidos)
 contenidoLeido(Serializacion, Contenido) :- Serializacion = [_|_], 
                                             noLeoNadaNoEscritoPreviamente(Serializacion),
-                                            realizarLecturas(Serializacion, Contenido).
+                                            realizarLecturas(Serializacion, Contenido, _).
 contenidoLeido(Procesos, Contenido)      :- serializar(Procesos, Serializacion), 
                                             noLeoNadaNoEscritoPreviamente(Serializacion),
-                                            realizarLecturas(Serializacion, Contenido).
+                                            realizarLecturas(Serializacion, Contenido, _).
 
 %% realizarLecturas(+ListaProcesos, -ListaContenidosLeidos, -ListaConLecturasRealizadas)
 realizarLecturas([], [], []).
@@ -115,8 +115,6 @@ realizarLecturas([escribir(Buffer, Contenido)|RestoProcesos], [Contenido|ListaCo
 realizarLecturas([escribir(Buffer, Contenido)|RestoProcesos], ListaContenidosLeidos, [escribir(Buffer, Contenido)|ListaConLecturasRealizadas])  :- not(memberchk(leer(Buffer), RestoProcesos)), realizarLecturas(RestoProcesos, ListaContenidosLeidos, ListaConLecturasRealizadas).
 realizarLecturas([Proceso|RestoProcesos], ListaContenidosLeidos, [Proceso|ListaConLecturasRealizadas])                                          :- Proceso \= escribir(_, _),
                                                                                                                                                    realizarLecturas(RestoProcesos, ListaContenidosLeidos, ListaConLecturasRealizadas).
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Contenido de los buffers %%
@@ -147,14 +145,17 @@ noCompartenBuffers([escribir(Buffer, _)|RestoProcesos], SegundaListaProcesos) :-
 noCompartenBuffers([leer(Buffer)|RestoProcesos], SegundaListaProcesos)        :- not(memberchk(leer(Buffer))), noCompartenBuffers(RestoProcesos, SegundaListaProcesos). 
 
 %% Ejercicio 8
-%% ejecucionSegura( XS,+BS,+CS) - COMPLETAR LA INSTANCIACIÓN DE XS
-ejecucionSegura(Ejecucion, ListaBuffers, Contenidos) :- desde(0, N),
+%% ejecucionSegura( ?XS,+BS,+CS) - COMPLETAR LA INSTANCIACIÓN DE XS
+ejecucionSegura(Ejecucion, ListaBuffers, Contenidos) :- var(Ejecucion),
+                                                        desde(0, N),
                                                         between(0, N, Longitud),
                                                         generarTodasLasEjecucionesDe(ListaBuffers, Contenidos, Ejecucion, N),
                                                         length(Ejecucion, Longitud), 
                                                         esSeguro(Ejecucion).
-
-%%
+ejecucionSegura(Ejecucion, ListaBuffers, Contenidos) :- nonvar(Ejecucion),
+                                                        length(Ejecucion, LongitudEjecucion),
+                                                        generarTodasLasEjecucionesDe(ListaBuffers, Contenidos, Ejecución, LongitudEjecucion). 
+%% generaTodasLasEjecucionesDe(+ListaBuffers, +ListaContenidos, ?Ejecucion, +N) En el caso de recibir Ejecución instanciado tiene éxito sii esta es una lista de N elementos, cuyos elementos o son leer(B) con B en ListaBuffers, escribir(B, C) con B en ListaBuffers y C en ListaContenidos o computar.
 generarTodasLasEjecucionesDe(_, _, [], 0).
 generarTodasLasEjecucionesDe(ListaBuffers, ListaContenidos, [escribir(Buffer, Contenido)|RestoProcesos], N) :- N >= 0, 
                                                                                                                member(Buffer, ListaBuffers),
@@ -169,14 +170,17 @@ generarTodasLasEjecucionesDe(ListaBuffers, ListaContenidos, [computar|RestoProce
                                                                                                                N2 is N-1,
                                                                                                                generarTodasLasEjecucionesDe(ListaBuffers, ListaContenidos, RestoProcesos, N2).
 
-%%
+%% desde(+X, -Y)
 desde(X,X).
 desde(X, Y) :- X1 is X+1, desde(X1, Y).
 
 
   %% 8.1. Analizar la reversibilidad de XS, justificando adecuadamente por qué el predicado se comporta como
   %% lo hace.
-
+  /*
+  Si XS (Ejecución) no está instanciada entramos en la primer cláusula. Como Ejecución está instanciada var(Ejecucion) tiene éxito. Tanto el desde(0,N) como between(0,N,Longitud) no requieren que Ejecucion esté instanciada porque ni lo usan. generarTodasLasEjecucionesDe es reversible en Ejecución, así que puede recibirla instanciada
+  length(Ejecucion, Longitud) tampoco tiene problemas si Ejecucion viene instanciada porque es length
+  */
 
 
 %%%%%%%%%%%
