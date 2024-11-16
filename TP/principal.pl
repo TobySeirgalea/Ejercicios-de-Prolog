@@ -154,7 +154,8 @@ ejecucionSegura(Ejecucion, ListaBuffers, Contenidos) :- var(Ejecucion),
                                                         esSeguro(Ejecucion).
 ejecucionSegura(Ejecucion, ListaBuffers, Contenidos) :- nonvar(Ejecucion),
                                                         length(Ejecucion, LongitudEjecucion),
-                                                        generarTodasLasEjecucionesDe(ListaBuffers, Contenidos, Ejecución, LongitudEjecucion). 
+                                                        generarTodasLasEjecucionesDe(ListaBuffers, Contenidos, Ejecución, LongitudEjecucion),
+                                                        esSeguro(Ejecucion). 
 %% generaTodasLasEjecucionesDe(+ListaBuffers, +ListaContenidos, ?Ejecucion, +N) En el caso de recibir Ejecución instanciado tiene éxito sii esta es una lista de N elementos, cuyos elementos o son leer(B) con B en ListaBuffers, escribir(B, C) con B en ListaBuffers y C en ListaContenidos o computar.
 generarTodasLasEjecucionesDe(_, _, [], 0).
 generarTodasLasEjecucionesDe(ListaBuffers, ListaContenidos, [escribir(Buffer, Contenido)|RestoProcesos], N) :- N >= 0, 
@@ -179,7 +180,8 @@ desde(X, Y) :- X1 is X+1, desde(X1, Y).
   %% lo hace.
   /*
   Si XS (Ejecución) no está instanciada entramos en la primer cláusula. Como Ejecución está instanciada var(Ejecucion) tiene éxito. Tanto el desde(0,N) como between(0,N,Longitud) no requieren que Ejecucion esté instanciada porque ni lo usan. generarTodasLasEjecucionesDe es reversible en Ejecución, así que puede recibirla instanciada
-  length(Ejecucion, Longitud) tampoco tiene problemas si Ejecucion viene instanciada porque es length
+  length(Ejecucion, Longitud) tampoco tiene problemas si Ejecucion viene instanciada porque length es reversible en ambos argumentos, en este caso verificará que la longitud de Ejecucion sea Longitud. Luego entra Ejecucion instanciada en esSeguro(+P), por lo que tampoco hay problema.
+  Si XS (Ejecucion) está instanciada var(Ejecucion) falla y nonvar(Ejecucion) tiene éxito, por lo que entra sólo en la segunda cláusula. length(Ejecucion, Longitud) no tiene problema porque es reversible en sus dos argumentos, en este caso también verifica que Ejecucion tenga como longitud a Longitud. generarTodasLasEjecucionDe es reversible en Ejecucion, en este caso verifica que todos los procesos de Ejecucion sean lecturas, escrituras o computar. Si son lecturas pide que sean de un Buffer de la ListaBuffers, si son escrituras también se fija que sus contenidos sean de ListaContenidos. Esto lo repite por cada elemento de la lista. En el caso de que no unifique con ninguna cláusula de estas es porque no todos sus procesos son sobre Buffers de ListaBuffers o no tienen contenidos de ListaContenidos y acaba fallando. Después de ver que se cumplan estas condiciones entra en esSeguro(+P) con Ejecucion ya instanciada por lo que no hay problema.
   */
 
 
