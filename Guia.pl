@@ -102,7 +102,14 @@ sufijo(S, L) :- append(_, S, L).
 sublista(S, L) :- prefijo(P, L), sufijo(S, P).
 %Otra versión
 sublistaV2(R, L) :- sufijo(S, L), prefijo(R, S).
+%palindromo(+L, ?L1) %TIP no querés la mitad sino toda la palabra y después al revés 123321
+palindromo([],[]). 
+palindromo(XS, P) :- reverse(XS, L), append(XS, L, P). 
 
+%Consulta: Por qué sin la primera cláusula no funciona. No debería bastar con la segunda para el caso de un elemento?.
+iesimo([X], 0, X).
+iesimo([X|_], 0, X). 
+iesimo([X|XS], I, N) :- I >= 1, N2 is I-1, iesimo(XS, N2, N).
 %pertenece(+X, +L)
 pertenece(E, [X|Xs]) :- E = X.
 pertenece(E, [X|Xs]) :- E \= X, pertenece(E, Xs).
@@ -330,7 +337,8 @@ mayorQue10(N) :- N > 10.
 
 %Una vez encuentres el primero que cumple no vuelvas a seguir buscando más
 minimoNaturalTalQue(P, N) :- desde(1, N), call(P, N), !.
-
+%Sin usar cut
+minimoNaturalTalQue(P, X) :- call(P,X), X >= 0, not((call(P,Y), Y < X)).
 %Ejercicio importante:
 %Versión final correcta.
 %proximoNumPoderoso(+X, -Y) sin el ! (cut) no termina, ya que cuando hace backtracking vuelve al generador infinito y sigue retornando todos los numeros poderosos en lugar de sólo el próximo 
@@ -373,7 +381,8 @@ factores(N, Candidato) :- divisores(N, Candidato), esPrimo(Candidato).
 %Si usamos between vamos a dar una solución por cada vez que se haga backtracking y se llegue a algo true. Pero necesitaba todo en una lista y no puedo usar findall 
 divisores(N, M) :- between(1, N, M), 0 is mod(N, M).
 
-esPrimo(X) :- not((Ultimo is X-1 , between(2, Ultimo, Candidato), 0 is mod(X, Candidato))).
+
+esPrimo(X) :- X > 1, not((Ultimo is X-1 , between(2, Ultimo, Candidato), 0 is mod(X, Candidato))).
 
 natural(cero).
 natural(suc(X)) :- natural(X).
@@ -428,4 +437,92 @@ noPerteneceAlArbol(Elemento, bin(I, R, D)) :- Elemento \= R, noPerteneceAlArbol(
 %todosLosArbolesDeNnodos(-A, +N) notar que debo restarle uno a N porque por el constructor bin(I, _, D) ya estoy agregando uno entonces solo necesito los de los subárboles
 todosLosArbolesDeNnodos(nil, 0).
 todosLosArbolesDeNnodos(bin(I , _, D), N) :- N > 0, NodosSubarboles is N - 1, between(0, NodosSubarboles, CantidadI), CantidadD is NodosSubarboles - CantidadI, arbolesDeNNodos(CantidadI, I), arbolesDeNNodos(CantidadD, D).
+
+
+parPositivo(X,Y) :- mayor(X, 0), mayor(Y, 0).
+natural(0).
+natural(succ(N)) :- natural(N).
+mayor(succ(X),0) :- natural(X).
+mayor(succ(X),succ(Y)) :- mayor(X,Y).
+
+natural(0).
+natural(suc(X)) :- natural(X).
+mayor(suc(X),X).
+mayor(suc(X),Y) :- mayor(X,Y).
+parDeNat(X,Y) :- natural(X), natural(Y).
+
+%sublistaMasLargaDePrimos(+L, ?S)
+sublistaMasLargaDePrimos(Lista, Sublista) :- sublistaDePrimos(Lista, Sublista), not((sublistaDePrimos(Lista, OtraSublista), deLongitudMayor(OtraSublista, Sublista))).
+
+%deLongirudMayor(+XS, +YS)
+deLongitudMayor(XS, YS) :- length(XS, LongXS), length(YS, LongYS), LongXS > LongYS.
+
+%sublistaDePrimos(+L, ?S)
+sublistaDePrimos(Lista, Sublista) :- sublista(Sublista, Lista), todosPrimos(Sublista).
+
+%todosPrimos(+XS)
+todosPrimos([]).
+todosPrimos([X|XS]) :- esPrimo(X) , todosPrimos(XS).
+
+%listasQueSuman(+S, -L)
+listasQueSuman(0, []).
+listasQueSuman(S, [X|XS]) :- S > 0, between(1, S, X), S2 is S - X, listasQueSuman(S2, XS).
+
+% generarTodasLasListasDeNaturasles(-L)
+generarTodasLasListasDeNaturasles(Lista) :- desde(1, S), listasQueSuman(S, Lista).
+
+% esCapicua(+L)
+esCapicua(L) :- reverse(L,L).
+
+% generarCapicuas(-Lista)
+generarCapicuas(Lista) :- generarTodasLasListasDeNaturasles(Lista), esCapicua(Lista).
+
+
+% palabra(+A, +N, -P) que genere todas las palabras del alfabeto A de N letras
+palabra(Alfabeto, 0, []).                            %Clave no olvidar el Longitud > 0 sino se cuelga
+palabra(Alfabeto, Longitud, [Letra|RestoPalabra]) :- Longitud > 0, member(Letra, Alfabeto), LongitudCola is Longitud - 1, palabra(Alfabeto, LongitudCola, RestoPalabra).
+
+% frase(+Alfabeto, -Frase) ASI NO TERMINA NUNCA
+% frase(Alfabeto, [PrimerFrase|Frase]) :- desde(1, N), palabra(Alfabeto, N, PrimerFrase), frase(Alfabeto, Frase).
+
+% frasesDeLongitud(+Alfabeto, +Longitud, -Frase)
+frasesDeLongitudYkLetras(Alfabeto, 0, _, []).
+frasesDeLongitudYkLetras(Alfabeto, CantPalabras, K,[PrimerPalabra|RestoFrase]) :- CantPalabras > 0, between(1, K, Long),
+                                                                                  palabra(Alfabeto, Long, PrimerPalabra),
+                                                                                  Cant2 is CantPalabras - 1,
+                                                                                  frasesDeLongitudYkLetras(Alfabeto, Cant2, K, RestoFrase).
+                                                                        
+%frase(+Alfabeto, -Frase)                                                                        
+frase(Alfabeto, Frase) :- desde(1, S), paresQueSuman(S, CantPalabras, LongPalabras), frasesDeLongitudYkLetras(Alfabeto, CantPalabras, LongPalabras, Frase).
+
+% simbolo(?S)
+simbolo(S) :- member(S, Alfabeto).
+
+% clausura(-L)
+clausura(L) :- desde(0, Longitud), palabra([a,b], Longitud, L).
+
+
+
+% ochoReinas(?XS)
+ochoReinas(XS) :- var(XS), llenarTableros(Tablero), listaSinRepetidos(Tablero), nadieEnMismaDiagonal(Tablero, 1).
+ochoReinas(XS) :- nonvar(XS), listaSinRepetidos(XS), nadieEnMismaDiagonal(XS, 1).
+
+% llenarTableros(-Tablero)
+llenarTableros(Tablero) :- listasDeNElementosQueSuman(8, 36, Tablero).
+
+
+% listaSinRepetidos(+XS)
+listaSinRepetidos([]).
+listaSinRepetidos([X|XS]) :- not(memberchk(X, XS)), listaSinRepetidos(XS).
+
+nadieEnMismaDiagonal([X|XS], Index) :- 
+    between(-8, 8, Incremento), 
+    FilaDiagonal is X + Incremento,
+    ColumnaDiagonal is Index + Incremento,
+    FilaDiagonal > 0, ColumnaDiagonal > 0,
+    not(nth1(ColumnaDiagonal, XS, FilaDiagonal)), 
+    Siguiente is Index + 1, 
+    nadieEnMismaDiagonal(XS, Siguiente).
+%Las listas empiezan en index 1 e.g.  nth1(1,[1],X) instancia X = 1.
+%nth1(?Index, ?List, ?Elem) Is true when Elem is the Index’th element of List. Counting starts at 1.
 
