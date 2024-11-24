@@ -151,8 +151,6 @@ borrar([X|XS], E, [X|L]) :- X \= E, borrar(XS, E, L). %USAR UNIFICACIÓN NATIVA 
 borrar([E|XS], E, L) :- borrar(XS, E, L). 
 borrar([X|XS], E, [X|L]) :- X \= E, borrar(XS, E, L).
 
-
-
 %sacarDuplicados(+L1, -L2) de nuevo, si usa member retorna repetidas soluciones, pero si uso pertenece no
 sacarDuplicados([], []).
 sacarDuplicados([X|XS], L) :- member(X, XS), borrar(XS, X, XS1), sacarDuplicados(XS1, L).
@@ -258,9 +256,7 @@ aBBInsertar(V, bin(I, V, D), bin(I, V, D)). %Clásula que permite que sea ?T2 en
 aBBInsertar(X, bin(I, V, D), bin(I2, V, D)) :- V > X, aBBInsertar(X, I, I2).
 aBBInsertar(X, bin(I, V, D), bin(I, V, D2)) :- V =< X, aBBInsertar(X, D, D2).
 %Si le agregamos un hecho que sea aBBInsertar(V, bin(I,V,D),bin(I,V,D)) y le damos un T2 instanciado nos retorna true si ese elemento X pertenece
-
 %Generate & Test
-
 %coprimos(-X, -Y)
 coprimos(X, Y) :- desde(1, S), paresQueSuman(S, X, Y), 1 is gcd(X, Y).
 
@@ -323,7 +319,6 @@ triplasQueSuman(S, A, B, C) :- ground([A, B, C]), S is A + B + C.
 triangulo(tri(A, B, C)) :- desde(3, S), triplasQueSuman(S, A, B, C), esTriangulo(tri(A, B, C)).
 
 %Negación por falla:
-
 %corteMasParejo(+L, -L1, -L2)
 corteMasParejo(L, L1, L2) :- esUnCorteDeDiferencia(L, L1, L2, D1), not((esUnCorteDeDiferencia(L, L3, L4, D2), D2 < D1)).
 
@@ -364,9 +359,7 @@ factoresMenoresQue(N, 1, []).
 factoresMenoresQue(N, I, [I|L]) :- I > 0, 0 is mod(N, I), I2 is I-1, factoresMenoresQue(N, I2, L). 
 factoresMenoresQue(N, I, L) :- I > 0, not(0 is mod(N, I)), I2 is I-1, factoresMenoresQue(N, I2, L). 
 
-
 %Intentos fallidos y lo que enseñan:
-
 
 %La lógica estaba mal planteada: Si pongo todo en una cláusula como conjunciones, una vez encuentre uno que cumpla va a dar true y seguir buscando otro que cumpla hasta agotar espacio de búsqueda. Si se quiere obtener todos los X tal que cumplen esa propiedad está bien, pero acá queríamos verificar que todos los elementos de la listaFactores cumplan la propiedad. Entonces no sirve encararlo así.
 %Otra forma de encararlo: Si generás una lista con todos los X para los que querés que esa propiedad se cumpla en simultáneo, y por cada elemento de esa lista verificas la propiedad y haces recursión sobre la cola de la lista, entonces estarás verificando que esa propiedad se cumpla para todas las instanciaciones que satisfagan el predicado y no usás un forall
@@ -380,7 +373,6 @@ factores(N, Candidato) :- divisores(N, Candidato), esPrimo(Candidato).
 
 %Si usamos between vamos a dar una solución por cada vez que se haga backtracking y se llegue a algo true. Pero necesitaba todo en una lista y no puedo usar findall 
 divisores(N, M) :- between(1, N, M), 0 is mod(N, M).
-
 
 esPrimo(X) :- X > 1, not((Ultimo is X-1 , between(2, Ultimo, Candidato), 0 is mod(X, Candidato))).
 
@@ -438,7 +430,6 @@ noPerteneceAlArbol(Elemento, bin(I, R, D)) :- Elemento \= R, noPerteneceAlArbol(
 todosLosArbolesDeNnodos(nil, 0).
 todosLosArbolesDeNnodos(bin(I , _, D), N) :- N > 0, NodosSubarboles is N - 1, between(0, NodosSubarboles, CantidadI), CantidadD is NodosSubarboles - CantidadI, arbolesDeNNodos(CantidadI, I), arbolesDeNNodos(CantidadD, D).
 
-
 parPositivo(X,Y) :- mayor(X, 0), mayor(Y, 0).
 natural(0).
 natural(succ(N)) :- natural(N).
@@ -464,7 +455,7 @@ sublistaDePrimos(Lista, Sublista) :- sublista(Sublista, Lista), todosPrimos(Subl
 todosPrimos([]).
 todosPrimos([X|XS]) :- esPrimo(X) , todosPrimos(XS).
 
-%listasQueSuman(+S, -L)
+%listasQueSuman(+S, -L) tambien se banca +L
 listasQueSuman(0, []).
 listasQueSuman(S, [X|XS]) :- S > 0, between(1, S, X), S2 is S - X, listasQueSuman(S2, XS).
 
@@ -477,21 +468,18 @@ esCapicua(L) :- reverse(L,L).
 % generarCapicuas(-Lista)
 generarCapicuas(Lista) :- generarTodasLasListasDeNaturasles(Lista), esCapicua(Lista).
 
-
 % palabra(+A, +N, -P) que genere todas las palabras del alfabeto A de N letras
 palabra(Alfabeto, 0, []).                            %Clave no olvidar el Longitud > 0 sino se cuelga
 palabra(Alfabeto, Longitud, [Letra|RestoPalabra]) :- Longitud > 0, member(Letra, Alfabeto), LongitudCola is Longitud - 1, palabra(Alfabeto, LongitudCola, RestoPalabra).
 
 % frase(+Alfabeto, -Frase) ASI NO TERMINA NUNCA
 % frase(Alfabeto, [PrimerFrase|Frase]) :- desde(1, N), palabra(Alfabeto, N, PrimerFrase), frase(Alfabeto, Frase).
-
 % frasesDeLongitud(+Alfabeto, +Longitud, -Frase)
 frasesDeLongitudYkLetras(Alfabeto, 0, _, []).
 frasesDeLongitudYkLetras(Alfabeto, CantPalabras, K,[PrimerPalabra|RestoFrase]) :- CantPalabras > 0, between(1, K, Long),
                                                                                   palabra(Alfabeto, Long, PrimerPalabra),
                                                                                   Cant2 is CantPalabras - 1,
-                                                                                  frasesDeLongitudYkLetras(Alfabeto, Cant2, K, RestoFrase).
-                                                                        
+                                                                                  frasesDeLongitudYkLetras(Alfabeto, Cant2, K, RestoFrase).                                                                        
 %frase(+Alfabeto, -Frase)                                                                        
 frase(Alfabeto, Frase) :- desde(1, S), paresQueSuman(S, CantPalabras, LongPalabras), frasesDeLongitudYkLetras(Alfabeto, CantPalabras, LongPalabras, Frase).
 
@@ -501,15 +489,13 @@ simbolo(S) :- member(S, Alfabeto).
 % clausura(-L)
 clausura(L) :- desde(0, Longitud), palabra([a,b], Longitud, L).
 
-
-
 % ochoReinas(?XS)
-ochoReinas(XS) :- var(XS), llenarTableros(Tablero), listaSinRepetidos(Tablero), nadieEnMismaDiagonal(Tablero, 1).
+ochoReinas(Tablero) :- var(Tablero), length(Tablero, 8), llenarTableros(Tablero), listaSinRepetidos(Tablero), nadieEnMismaDiagonal(Tablero, 1).
 ochoReinas(XS) :- nonvar(XS), listaSinRepetidos(XS), nadieEnMismaDiagonal(XS, 1).
 
 % llenarTableros(-Tablero)
-llenarTableros(Tablero) :- listasDeNElementosQueSuman(8, 36, Tablero).
-
+llenarTableros([]).
+llenarTableros([Celda|Tablero]) :- member(Celda, [1,2,3,4,5,6,7,8]), llenarTableros(Tablero).
 
 % listaSinRepetidos(+XS)
 listaSinRepetidos([]).
@@ -526,3 +512,49 @@ nadieEnMismaDiagonal([X|XS], Index) :-
 %Las listas empiezan en index 1 e.g.  nth1(1,[1],X) instancia X = 1.
 %nth1(?Index, ?List, ?Elem) Is true when Elem is the Index’th element of List. Counting starts at 1.
 
+% masRepetido(+L, -X)
+masRepetido(L, X) :- member(X, L), cantidadRepeticiones(X, L, C1), not((member(Y, L), Y \= X, cantidadRepeticiones(Y, L, C2), C2 > C1)).
+
+% cantidadRepeticiones(+E, +L, -C)
+cantidadRepeticiones(_, [], 0).
+cantidadRepeticiones(E, [X|XS], C) :- E\= X, cantidadRepeticiones(E, XS, C).
+cantidadRepeticiones(E, [E|XS], C) :- cantidadRepeticiones(E, XS, C2), C is C2 + 1.
+
+
+% partesQueSuman(+L, +S, -P)
+partesQueSuman(Lista, Suma, Partes) :- partes(Lista, Partes), listasQueSuman(Partes, Suma).
+
+% montaña(+L, -L1, -C, -L2)
+montana([], [], _, []).
+montana([X,Y|YS], [X|L1], C, L2) :- X < Y, montana([Y|YS], L1, C, L2).
+montana([X,Y|YS], L1, X, [Y|L2]) :- X > Y, montana(YS, L1, C, L2).
+
+% todasLasListas(+A, -L)
+todasLasListasDelAlfabeto(A, L) :- desde(1, N), palabra(A, N, L).
+
+
+% caminoRoseTree(+R, -C)
+caminoRoseTree((N, []), [N]).
+caminoRoseTree((N, Hijos), [N|CaminoHijos]) :- member((Hijo, ListaHijos), Hijos), caminoRoseTree((Hijo, ListaHijos), CaminoHijos). 
+
+
+% caminoDeMayorValor(+R, -C)
+caminoDeMayorValor(RoseTree, Camino) :- caminoRoseTree(RoseTree, Camino),
+                                        sumlist(Camino, Suma1),
+                                        not((caminoRoseTree(RoseTree, OtroCamino),
+                                            OtroCamino \= Camino,
+                                            sumlist(OtroCamino, Suma2),
+                                            Suma2 > Suma1)).
+% sumlist(+List, -Sum) True when Sum is the list of all numbers in List.
+% length(?List, ?Length) 
+% nth1(?Index, ?List, ?Elem) Is true when Elem is the Index’th element of List. Counting starts at 1.
+% member(?Elem, ?List)
+% append(?List1, ?List2, ?List1AndList2) List1AndList2 is the concatenation of List1 and List2
+% last(?List, ?Last)
+% between(+Low, +High, ?Value)
+% union(+Set1, +Set2, -Set3)
+% intersection(+Set1, +Set2, -Set3)
+% subset(+SubSet, +Set)
+% subtract(+Set, +Delete, -Result)
+% select(?Elem, ?List1, ?List2)
+% reverse(?List1, ?List2)
