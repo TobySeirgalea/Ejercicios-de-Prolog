@@ -558,3 +558,44 @@ caminoDeMayorValor(RoseTree, Camino) :- caminoRoseTree(RoseTree, Camino),
 % subtract(+Set, +Delete, -Result)
 % select(?Elem, ?List1, ?List2)
 % reverse(?List1, ?List2)
+
+/* Pack consecutive duplicates of list elements into sublists.
+    If a list contains repeated elements they should be placed in separate sublists.
+
+    Example:
+    ?- pack([a,a,a,a,b,c,c,a,a,d,e,e,e,e],X).
+    X = [[a,a,a,a],[b],[c,c],[a,a],[d],[e,e,e,e]]
+*/
+
+/*Idea: Recorro la lista, tomo un elemento, llamo a predicado que me recolecta todos los repetidos consecutivos y me retorna lista sin estos, hago recursión sobre esta última*/
+
+pack([], []).
+pack([X|XS], [Consecutivos|DemasConsecutivos]) :- agregarConsecutivosIguales([X|XS], X, Consecutivos, Resto), pack(Resto, DemasConsecutivos).
+
+
+% agregarConsecutivosIguales(+XS, +UltimoAgregado, -Res, Resto)
+agregarConsecutivosIguales([], _, [], []).
+% Caso último agregado es igual al actual
+agregarConsecutivosIguales([X|XS], X, [X|Res], Resto ) :- agregarConsecutivosIguales(XS, X, Res, Resto).
+% Caso último agregado es distinto al actual
+agregarConsecutivosIguales([X|XS], Y, [], [X|XS]) :- X \= Y.
+
+sinRepetidosConsecutivos([X], [X]).
+% si son distintos agregalo a lista y hace recursion con el siguiente y resto de la lista
+sinRepetidosConsecutivos([Y, X|XS], [Y|Res]) :- X \= Y, sinRepetidosConsecutivos([X|XS], Res).
+% si son iguales hace recursion con el resto y no agregues este repetido
+sinRepetidosConsecutivos([X,X|XS], Res) :- sinRepetidosConsecutivos([X|XS], Res).
+
+/*    Use the result of problem P09 to implement the so-called run-length encoding data compression method. Consecutive duplicates of elements are encoded as terms [N,E] where N is the number of duplicates of the element E.
+
+    Example:
+    ?- encode([a,a,a,a,b,c,c,a,a,d,e,e,e,e],X).
+    X = [[4,a],[1,b],[2,c],[2,a],[1,d][4,e]]
+*/
+encode(XS, Res) :- pack(XS, Res1), contarApariciones(Res1, Res).
+
+contarApariciones([], []).
+contarApariciones([[Elemento|YS]|XS], [[Apariciones, Elemento]|Resto]) :- length([Elemento|YS], Apariciones), contarApariciones(XS, Resto).
+
+
+
