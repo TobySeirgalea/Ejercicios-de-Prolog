@@ -261,7 +261,12 @@ aBBInsertar(X, bin(I, V, D), bin(I, V, D2)) :- V =< X, aBBInsertar(X, D, D2).
 coprimos(X, Y) :- desde(1, S), paresQueSuman(S, X, Y), 1 is gcd(X, Y).
 
 %paresQueSuman(+S, -X, -Y) desde 1 en adelante. Si quiero que generen los ceros también sacar S2 y usar S directo, además de arrancar el between en 0 y no en 1.
+paresQueSuman(0,0,0).
 paresQueSuman(S, X, Y) :- S2 is S-1, between(1, S2, X), Y is S-X.
+
+paresQueSumanDesdeCero(S, X, Y) :- between(0, S, X), Y is S-X.
+
+
 
 %paresQueSumanAntisimetrico(+S, -X, -Y)
 paresQueSumanAntisimetrico(S, X, Y) :- S2 is S-1, between(1, S2, X), Y is S-X, Y > X.
@@ -597,5 +602,96 @@ encode(XS, Res) :- pack(XS, Res1), contarApariciones(Res1, Res).
 contarApariciones([], []).
 contarApariciones([[Elemento|YS]|XS], [[Apariciones, Elemento]|Resto]) :- length([Elemento|YS], Apariciones), contarApariciones(XS, Resto).
 
+/* Decode a run-length encoded list.
+    Given a run-length code list generated as specified in problem P11. Construct its uncompressed version.*/
+decodificar([], []).
+decodificar([[Apariciones, Elemento]|XS], [Rep|Rec]) :- repetir(Apariciones, Elemento, Rep), decodificar(XS, Rec).
+
+repetir(0, _, []).
+repetir(Cantidad, Elemento, [Elemento|Res]) :- Cantidad \= 0, Cantidad2 is Cantidad-1, repetir(Cantidad2, Elemento, Res).
+/*Duplicate the elements of a list a given number of times.
+    Example:
+    ?- dupli([a,b,c],3,X).
+    X = [a,a,a,b,b,b,c,c,c]*/
+dupli([], _, []).
+dupli([X|XS], N, Res) :- repetir(N, X, Rep), dupli(XS, N, Rep1), append(Rep, Rep1, Res).
+/*Drop every N'th element from a list.
+    Example:
+    ?- drop([a,b,c,d,e,f,g,h,i,k],3,X).
+    X = [a,b,d,e,g,h,k]*/
+/*Uso auxiliar que recorra N lugares y al N-esimo lo saque y también de resto lista sobre que hará recursión drop*/
+drop([], _, []).
+drop([X|XS], N, Res) :- sacarNesimo([X|XS], N, PrimerosSinNesimo, SiguientesAlNesimo), drop(SiguientesAlNesimo, N, ResultadoRecursivo), append(PrimerosSinNesimo, ResultadoRecursivo, Res).
+
+sacarNesimo([], _, [], []).
+sacarNesimo([X|XS], 0, [], XS).
+sacarNesimo([X|XS], N, [X|R], RS) :- N > 0, N2 is N-1, sacarNesimo(XS, N2, R, RS).
+
+/* Split a list into two parts; the length of the first part is given.
+    Do not use any predefined predicates.
+
+    Example:
+    ?- split([a,b,c,d,e,f,g,h,i,k],3,L1,L2).
+    L1 = [a,b,c]
+    L2 = [d,e,f,g,h,i,k]*/
+split(XS, N, L1, L2) :- append(L1, L2, XS), length(L1, N).
+/*Extract a slice from a list.
+    Given two indices, I and K, the slice is the list containing the elements between the I'th and K'th element of the original list (both limits included). Start counting the elements with 1.
+
+    Example:
+    ?- slice([a,b,c,d,e,f,g,h,i,k],3,7,L).
+    X = [c,d,e,f,g]*/
+slice([], _, _, []).
+slice([X|XS], Init, Finish, Res) :- Init > 0, Finish >= Init, Init2 is Init-1, Finish2 is Finish - 1, slice(XS, Init2, Finish2, Res).
+slice([X|XS], 1, Finish, [X|Res]) :- Finish > 0, Finish2 is Finish - 1, slice(XS, 1, Finish2, Res).
+slice([X|XS], 1, 0, []).
+
+/*(**) Rotate a list N places to the left.
+    Examples:
+    ?- rotate([a,b,c,d,e,f,g,h],3,X).
+    X = [d,e,f,g,h,a,b,c]
+
+    ?- rotate([a,b,c,d,e,f,g,h],-2,X).
+    X = [g,h,a,b,c,d,e,f]
+
+    Hint: Use the predefined predicates length/2 and append/3, as well as the result of problem P17.*/
+rotate([], _, []).
+rotate([X|XS], N, L) :- N >= 0, split([X|XS], N, L1, L2), append(L2, L1, L).
+rotate([X|XS], N, L) :- N < 0, length([X|XS], Longitud), N2 is Longitud + N, split([X|XS], N2, L1, L2), append(L2, L1, L).
+
+/**) Remove the K'th element from a list.
+    Example:
+    ?- remove_at(X,[a,b,c,d],2,R).
+    X = b
+    R = [a,c,d]*/
+remove_at(X, [X|XS], 1, XS).
+remove_at(X, [Y|YS], N, [Y|Resto]) :- N > 0, N2 is N - 1, remove_at(X, YS, N2, Resto).
+/*(*) Insert an element at a given position into a list.
+    Example:
+    ?- insert_at(alfa,[a,b,c,d],2,L).
+    L = [a,alfa,b,c,d]*/
+insert_at(X, [Y|YS], N, [Y|L]) :- N > 1, N2 is N-1, insert_at(X, YS, N2, L).
+insert_at(X, [Y|YS], 1, [X, Y|YS]).
+/*(*) Create a list containing all integers within a given range.
+    Example:
+    ?- range(4,9,L).
+    L = [4,5,6,7,8,9]*/
+range(Init, End, [Init|Res]) :- Init =< End, Init2 is Init + 1, range(Init2, End, Res).
+range(Init, End, []) :- Init > End.
+
+/*Construct completely balanced binary trees
+    In a completely balanced binary tree, the following property holds for every node: The number of nodes in its left subtree and the number of nodes in its right subtree are almost equal, which means their difference is not greater than one.
+
+    Write a predicate cbal_tree/2 to construct completely balanced binary trees for a given number of nodes. The predicate should generate all solutions via backtracking. Put the letter 'x' as information into all nodes of the tree.
+    Example:
+    ?- cbal_tree(4,T).
+    T = t(x, t(x, nil, nil), t(x, nil, t(x, nil, nil))) ;
+    T = t(x, t(x, nil, nil), t(x, t(x, nil, nil), nil)) ;
+    etc......No*/
+
+paresConDiferenciaMaximaDe(X, Y, Z, LimiteSuperior) :- paresQueSumanDesdeCero(LimiteSuperior, X, Y), Z >= abs(X-Y).
+
+cbal_tree(0, nil).
+cbal_tree(N, t(x, Izq, Der)) :- N > 0, N2 is N-1, paresConDiferenciaMaximaDe(X, Y, 1, N2), cbal_tree(X, Izq), cbal_tree(Y, Der). 
 
 
