@@ -695,3 +695,89 @@ cbal_tree(0, nil).
 cbal_tree(N, t(x, Izq, Der)) :- N > 0, N2 is N-1, paresConDiferenciaMaximaDe(X, Y, 1, N2), cbal_tree(X, Izq), cbal_tree(Y, Der). 
 
 
+/*(**) Symmetric binary trees
+    Let us call a binary tree symmetric if you can draw a vertical line through the root node and then the right subtree is the mirror image of the left subtree. Write a predicate symmetric/1 to check whether a given binary tree is symmetric. Hint: Write a predicate mirror/2 first to check whether one tree is the mirror image of another. We are only interested in the structure, not in the contents of the nodes.*/
+
+symmetricBinaryTree(nil).
+symmetricBinaryTree(t(_,Izq, Der)) :- espejo(Izq, Der).
+
+espejo(nil, nil).
+espejo(t(_, Izq1, Der1), t(_, Izq2, Der2)) :- espejo(Izq1, Der2), espejo(Der1, Izq2).
+
+/*(**) Binary search trees (dictionaries)
+    Use the predicate add/3, developed in chapter 4 of the course, to write a predicate to construct a binary search tree from a list of integer numbers.
+    Example:
+    ?- construct([3,2,5,7,1],T).
+    T = t(3, t(2, t(1, nil, nil), nil), t(5, nil, t(7, nil, nil)))*/
+%Idea: Agregar un elemento de la lista y borrarlo, hacer recursión con lista resultante. Usar member para iterar por cada elemento de la lista para que todos tengan chance de ser raices o estar en cierta posición
+
+
+tomarElemento([X|XS], Elemento, Resto) :- member(Elemento, [X|XS]), borrar(Elemento, [X|XS], Resto).
+
+borrar(_, [], []).
+borrar(Elemento, [Elemento|XS], XS).
+borrar(Elemento, [X|XS], [X|Resto]) :- Elemento \= X, borrar(Elemento, XS, Resto).
+
+generarArbol([], nil).
+generarArbol(XS, t(Elemento, SubIzq, SubDer)) :- tomarElemento(XS, Elemento, Resto), menoresQueYMayoresQue(Elemento, Resto, Menores, Mayores), generarArbol(Menores, SubIzq), generarArbol(Mayores, SubDer).
+
+menoresQueYMayoresQue(_, [], [], []).
+menoresQueYMayoresQue(Numero, [X|XS], [X|Menores], Mayores) :- X =< Numero, menoresQueYMayoresQue(Numero, XS, Menores, Mayores).
+menoresQueYMayoresQue(Numero, [X|XS], Menores, [X|Mayores]) :- X > Numero, menoresQueYMayoresQue(Numero, XS, Menores, Mayores).  
+
+esABB(nil).
+esABB(t(X, nil, nil)).
+esABB(t(X, Izq, nil)) :- Izq \= nil, raiz(Izq, RaizIzq), X >= RaizIzq, esABB(Izq).
+esABB(t(X, nil, Der)) :- Der \= nil, raiz(Der, RaizDer), X < RaizDer, esABB(Der).
+esABB(t(X, Izq, Der)) :- Izq \= nil, Der \= nil, raiz(Der, RaizDer), raiz(Izq, RaizIzq), X =< RaizIzq, X > RaizDer, esABB(Izq), esABB(Der).
+
+raiz(t(X,_,_), X).
+
+generarTodosLosABBs(XS, Arbol) :- generarArbol(XS, Arbol), esABB(Arbol).
+
+/*(**) Generate-and-test paradigm
+    Apply the generate-and-test paradigm to construct all symmetric, completely balanced binary trees with a given number of nodes. Example:
+    ?- sym_cbal_trees(5,Ts).
+    Ts = [t(x, t(x, nil, t(x, nil, nil)), t(x, t(x, nil, nil), nil)), t(x, t(x, t(x, nil, nil), nil), t(x, nil, t(x, nil, nil)))] */
+
+sym_cbal_trees(N, T) :- cbal_tree(N, T), symmetricBinaryTree(T).
+
+/**) Construct height-balanced binary trees
+    In a height-balanced binary tree, the following property holds for every node: The height of its left subtree and the height of its right subtree are almost equal, which means their difference is not greater than one.
+
+    Write a predicate hbal_tree/2 to construct height-balanced binary trees for a given height. The predicate should generate all solutions via backtracking. Put the letter 'x' as information into all nodes of the tree.
+    Example:
+    ?- hbal_tree(3,T).
+    T = t(x, t(x, t(x, nil, nil), t(x, nil, nil)), t(x, t(x, nil, nil), t(x, nil, nil))) ;
+    T = t(x, t(x, t(x, nil, nil), t(x, nil, nil)), t(x, t(x, nil, nil), nil)) ;
+    etc......No*/
+%Es como cbal_tree pero en vez de con cantidad de nodos con la altura
+alturaDeArbol(nil, 0).
+alturaDeArbol(t(x, Izq, Der), N) :- alturaDeArbol(Izq, AlturaIzq), alturaDeArbol(Der, AlturaDer), N is 1 + AlturaIzq + AlturaDer.
+
+arbolesDeAlturaN(0, nil).
+arbolesDeAlturaN(1, t(x, nil, nil)).
+arbolesDeAlturaN(N, t(x, Izq, Der)) :- N > 1, N2 is N-1, paresDeAlturas(N2, X, Y), arbolesDeAlturaN(X, Izq), arbolesDeAlturaN(Y, Der).
+arbolesDeAlturaN(N, t(x, Izq, Der)) :- N > 1, N2 is N-1, paresDeAlturas(N2, Y, X), arbolesDeAlturaN(X, Izq), arbolesDeAlturaN(Y, Der).
+arbolesDeAlturaN(N, t(x, Izq, Der)) :- N > 1, N2 is N-1, arbolesDeAlturaN(N2, Izq), arbolesDeAlturaN(N2, Der).
+
+
+paresDeAlturas(Altura, Altura, Altura2) :- Altura2 is Altura - 1. 
+
+/**) Construct height-balanced binary trees with a given number of nodes
+    Consider a height-balanced binary tree of height H. What is the maximum number of nodes it can contain?
+    Clearly, MaxN = 2**H - 1. However, what is the minimum number MinN? This question is more difficult. Try to find a recursive statement and turn it into a predicate minNodes/2 defined as follwos:
+
+    % minNodes(H,N) :- N is the minimum number of nodes in a height-balanced binary tree of height H.
+    (integer,integer), (+,?)
+
+    On the other hand, we might ask: what is the maximum height H a height-balanced binary tree with N nodes can have?
+
+    % maxHeight(N,H) :- H is the maximum height of a height-balanced binary tree with N nodes
+    (integer,integer), (+,?)
+
+    Now, we can attack the main problem: construct all the height-balanced binary trees with a given nuber of nodes.
+
+    % hbal_tree_nodes(N,T) :- T is a height-balanced binary tree with N nodes.
+
+    Find out how many height-balanced trees exist for N = 15.*/
