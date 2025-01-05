@@ -692,7 +692,7 @@ range(Init, End, []) :- Init > End.
 paresConDiferenciaMaximaDe(X, Y, Z, LimiteSuperior) :- paresQueSumanDesdeCero(LimiteSuperior, X, Y), Z >= abs(X-Y).
 
 cbal_tree(0, nil).
-cbal_tree(N, t(x, Izq, Der)) :- N > 0, N2 is N-1, paresConDiferenciaMaximaDe(X, Y, 1, N2), cbal_tree(X, Izq), cbal_tree(Y, Der). 
+cbal_tree(N, t(X, Izq, Der)) :- N > 0, N2 is N-1, paresConDiferenciaMaximaDe(X, Y, 1, N2), cbal_tree(X, Izq), cbal_tree(Y, Der). 
 
 
 /*(**) Symmetric binary trees
@@ -753,13 +753,14 @@ sym_cbal_trees(N, T) :- cbal_tree(N, T), symmetricBinaryTree(T).
     etc......No*/
 %Es como cbal_tree pero en vez de con cantidad de nodos con la altura
 alturaDeArbol(nil, 0).
-alturaDeArbol(t(x, Izq, Der), N) :- alturaDeArbol(Izq, AlturaIzq), alturaDeArbol(Der, AlturaDer), N is 1 + AlturaIzq + AlturaDer.
+alturaDeArbol(t(X, Izq, Der), N) :- alturaDeArbol(Izq, AlturaIzq), alturaDeArbol(Der, AlturaDer), N is 1 + max(AlturaIzq, AlturaDer).
 
+% arbolesDeAlturaN(+N, -T)
 arbolesDeAlturaN(0, nil).
-arbolesDeAlturaN(1, t(x, nil, nil)).
-arbolesDeAlturaN(N, t(x, Izq, Der)) :- N > 1, N2 is N-1, paresDeAlturas(N2, X, Y), arbolesDeAlturaN(X, Izq), arbolesDeAlturaN(Y, Der).
-arbolesDeAlturaN(N, t(x, Izq, Der)) :- N > 1, N2 is N-1, paresDeAlturas(N2, Y, X), arbolesDeAlturaN(X, Izq), arbolesDeAlturaN(Y, Der).
-arbolesDeAlturaN(N, t(x, Izq, Der)) :- N > 1, N2 is N-1, arbolesDeAlturaN(N2, Izq), arbolesDeAlturaN(N2, Der).
+arbolesDeAlturaN(1, t(X, nil, nil)).
+arbolesDeAlturaN(N, t(X, Izq, Der)) :- N > 1, N2 is N-1, paresDeAlturas(N2, X, Y), arbolesDeAlturaN(X, Izq), arbolesDeAlturaN(Y, Der).
+arbolesDeAlturaN(N, t(X, Izq, Der)) :- N > 1, N2 is N-1, paresDeAlturas(N2, Y, X), arbolesDeAlturaN(X, Izq), arbolesDeAlturaN(Y, Der).
+arbolesDeAlturaN(N, t(X, Izq, Der)) :- N > 1, N2 is N-1, arbolesDeAlturaN(N2, Izq), arbolesDeAlturaN(N2, Der).
 
 
 paresDeAlturas(Altura, Altura, Altura2) :- Altura2 is Altura - 1. 
@@ -781,3 +782,77 @@ paresDeAlturas(Altura, Altura, Altura2) :- Altura2 is Altura - 1.
     % hbal_tree_nodes(N,T) :- T is a height-balanced binary tree with N nodes.
 
     Find out how many height-balanced trees exist for N = 15.*/
+
+contarNodos(nil, 0).
+contarNodos(t(X, Izq, Der), N) :- contarNodos(Izq, NIzq), contarNodos(Der, NDer), N is 1 + NIzq + NDer.
+
+minNodes(H, CantNodosArbol1) :- arbolesDeAlturaN(H, Arbol1), contarNodos(Arbol1, CantNodosArbol1), not((arbolesDeAlturaN(H, Arbol2), contarNodos(Arbol2, CantNodosArbol2), CantNodosArbol1 > CantNodosArbol2)).
+
+maxHeight(CantidadNodos, Altura) :- cbal_tree(CantidadNodos, Arbol), alturaDeArbol(Arbol, Altura), not((cbal_tree(CantidadNodos, Arbol2), alturaDeArbol(Arbol2, Altura2), Altura < Altura2)).
+
+hbal_tree_nodes(CantidadNodos, Arbol) :- cbal_tree(CantidadNodos, Arbol), esBalanceadoEnAltura(Arbol).
+
+esBalanceadoEnAltura(nil).
+esBalanceadoEnAltura(t(X, Izq, Der)) :- alturaDeArbol(Izq, AlturaIzq), alturaDeArbol(Der, AlturaDer), DiferenciaAltura is abs(AlturaDer - AlturaIzq), DiferenciaAltura =< 1.
+
+/*) Count the leaves of a binary tree
+    A leaf is a node with no successors. Write a predicate count_leaves/2 to count them.
+
+    % count_leaves(T,N) :- the binary tree T has N leaves */
+count_leaves(nil, 1).
+count_leaves(t(X, Izq, Der), N) :- count_leaves(Izq, HojasIzq), count_leaves(Der, HojasDer), N is HojasIzq + HojasDer.
+
+/*) Collect the leaves of a binary tree in a list
+    A leaf is a node with no successors. Write a predicate leaves/2 to collect them in a list.
+
+    % leaves(T,S) :- S is the list of all leaves of the binary tree T */
+leaves(nil, []).
+leaves(t(X, nil, nil), [X]).
+leaves(t(X, Izq, nil), Res) :- Izq \= nil, leaves(Izq, Res).
+leaves(t(X, nil, Der), Res) :- Der \= nil, leaves(Der, Res).
+leaves(t(X, Izq, Der), Res) :- Izq \= nil, Der \= nil, leaves(Izq, Res1), leaves(Der, Res2), append(Res1, Res2, Res).
+
+/*) Collect the internal nodes of a binary tree in a list
+    An internal node of a binary tree has either one or two non-empty successors. Write a predicate internals/2 to collect them in a list.
+
+    % internals(T,S) :- S is the list of internal nodes of the binary tree T.*/
+internals(nil, []).
+internals(t(X, nil, nil), []). %Si no agregas este caso falla porque cuando llega a una hoja no entra en ninguna y da false
+internals(t(X, nil, Der), [X|Res]) :- Der \= nil, internals(Der, Res).
+internals(t(X, Izq, nil), [X|Res]) :- Izq \= nil, internals(Izq, Res).
+internals(t(X, Izq, Der), [X|Res]) :- Izq \= nil, Der \= nil, internals(Izq, InternosIzq), internals(Der, InternosDer), append(InternosIzq, InternosDer, Res).
+
+/*) Collect the nodes at a given level in a list
+    A node of a binary tree is at level N if the path from the root to the node has length N-1. The root node is at level 1. Write a predicate atlevel/3 to collect all nodes at a given level in a list.
+
+    % atlevel(T,L,S) :- S is the list of nodes of the binary tree T at level L
+
+    Using atlevel/3 it is easy to construct a predicate levelorder/2 which creates the level-order sequence of the nodes. However, there are more efficient ways to do that. */
+
+atlevel(nil, _, []).
+atlevel(t(X, Izq, Der), 1, [X]).
+atlevel(t(X, Izq, Der), N, Res) :- N > 1, Izq \= nil, Der \= nil, N2 is N - 1, atlevel(Izq, N2, NodosIzq), atlevel(Der, N2, NodosDer), append(NodosIzq, NodosDer, Res).
+
+/*) Construct a complete binary tree
+    A complete binary tree with height H is defined as follows: The levels 1,2,3,...,H-1 contain the maximum number of nodes (i.e 2**(i-1) at the level i, note that we start counting the levels from 1 at the root). In level H, which may contain less than the maximum possible number of nodes, all the nodes are "left-adjusted". This means that in a levelorder tree traversal all internal nodes come first, the leaves come second, and empty successors (the nil's which are not really nodes!) come last.
+
+    Particularly, complete binary trees are used as data structures (or addressing schemes) for heaps.
+
+    We can assign an address number to each node in a complete binary tree by enumerating the nodes in levelorder, starting at the root with number 1. In doing so, we realize that for every node X with address A the following property holds: The address of X's left and right successors are 2*A and 2*A+1, respectively, supposed the successors do exist. This fact can be used to elegantly construct a complete binary tree structure. Write a predicate complete_binary_tree/2 with the following specification:
+
+    % complete_binary_tree(N,T) :- T is a complete binary tree with N nodes. (+,?)
+
+    Test your predicate in an appropriate way.*/
+/*Idea genero un arbol con cbal, calculo su altura, verifico que cada nivel excepto el último esté repleto*/
+
+complete_binary_tree(0, nil).
+complete_binary_tree(CantidadNodos, Arbol) :- cbal_tree(CantidadNodos, Arbol), alturaDeArbol(Arbol, Altura), todosNivelesExceptoUltimoColapsados(Arbol, Altura, 1).
+
+%Si estás en el anteúltimo nivel te da igual si abajo hay nil o u nodo
+todosNivelesExceptoUltimoColapsados(t(X, Izq, Der), Altura, NivelActual) :-
+Altura is NivelActual + 1.
+%Sino te fijas que abajo no haya nil, porque sino un nivel previo al último no estaría completo y hacés recursión
+todosNivelesExceptoUltimoColapsados(t(X, Izq, Der), Altura, NivelActual) :-
+NivelActual < Altura,
+NivelInferior is NivelActual + 1, NivelInferior \= Altura, Izq \= nil, Der \= nil, todosNivelesExceptoUltimoColapsados(Izq, Altura, NivelInferior), todosNivelesExceptoUltimoColapsados(Der, Altura, NivelInferior).
+
